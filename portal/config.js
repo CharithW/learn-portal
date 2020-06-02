@@ -17,8 +17,8 @@ const config = {
     tweetText: '',
     links: [{ text: '', link: '' }],
     search: {
-      enabled: false,
-      indexName: '',
+      enabled: true,
+      indexName: 'Docs',
       algoliaAppId: process.env.GATSBY_ALGOLIA_APP_ID,
       algoliaSearchKey: process.env.GATSBY_ALGOLIA_SEARCH_KEY,
       algoliaAdminKey: process.env.ALGOLIA_ADMIN_KEY,

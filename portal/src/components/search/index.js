@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   InstantSearch,
   Index,
@@ -102,20 +102,30 @@ const Results = connectStateResults(
 );
 
 const useClickOutside = (ref, handler, events) => {
-  if (!events) events = [`mousedown`, `touchstart`];
-  const detectClickOutside = event =>
-    ref && ref.current && !ref.current.contains(event.target) && handler();
-
   useEffect(() => {
-    for (const event of events) document.addEventListener(event, detectClickOutside);
-    return () => {
-      for (const event of events) document.removeEventListener(event, detectClickOutside);
+    const listener = event => {
+      console.log(ref);
+      if (!ref.current || ref.current.contains(event.target)) {
+        return;
+      }
+
+      handler(event);
     };
-  });
+
+    document.addEventListener('mousedown', listener);
+    document.addEventListener('touchstart', listener);
+
+    return () => {
+      document.removeEventListener('mousedown', listener);
+      document.removeEventListener('touchstart', listener);
+    };
+  }, [ref, handler]);
 };
 
 export default function SearchComponent({ indices, collapse, hitsAsGrid }) {
-  const ref = createRef();
+  console.log('search', indices);
+  indices.push();
+  const ref = useRef();
 
   const [query, setQuery] = useState(``);
 
@@ -130,29 +140,31 @@ export default function SearchComponent({ indices, collapse, hitsAsGrid }) {
   const displayResult = query.length > 0 && focus ? 'showResults' : 'hideResults';
 
   return (
-    <InstantSearch
-      searchClient={searchClient}
-      indexName={indices[0].name}
-      onSearchStateChange={({ query }) => setQuery(query)}
-      root={{ Root, props: { ref } }}
-    >
-      <Input onFocus={() => setFocus(true)} {...{ collapse, focus }} />
-      <HitsWrapper
-        className={'hitWrapper ' + displayResult}
-        show={query.length > 0 && focus}
-        asGrid={hitsAsGrid}
+    <div ref={ref}>
+      <InstantSearch
+        searchClient={searchClient}
+        indexName={indices[0].name}
+        onSearchStateChange={({ query }) => setQuery(query)}
+        root={{ Root, props: { ref } }}
       >
-        {indices.map(({ name, title, hitComp, type }) => {
-          return (
-            <Index key={name} indexName={name}>
-              <Results />
-              <Hits hitComponent={hitComps[hitComp](() => setFocus(false))} />
-            </Index>
-          );
-        })}
-        <PoweredBy />
-      </HitsWrapper>
-      <Configure hitsPerPage={5} />
-    </InstantSearch>
+        <Input onFocus={() => setFocus(true)} {...{ collapse, focus }} />
+        <HitsWrapper
+          className={'hitWrapper ' + displayResult}
+          show={query.length > 0 && focus}
+          asGrid={hitsAsGrid}
+        >
+          {indices.map(({ name, title, hitComp, type }) => {
+            return (
+              <Index key={name} indexName={name}>
+                <Results />
+                <Hits hitComponent={hitComps[hitComp](() => setFocus(false))} />
+              </Index>
+            );
+          })}
+          <PoweredBy />
+        </HitsWrapper>
+        <Configure hitsPerPage={5} />
+      </InstantSearch>
+    </div>
   );
 }
